@@ -1,0 +1,206 @@
+from ollama import chat, ChatResponse 
+
+# Function to get chat response
+def get_chat_response(prompt: str) -> str:
+    """Fetch a response from the chat model."""
+    try:
+        response: ChatResponse = chat(model='llama3.2', messages=[{
+            'role': 'user',
+            'content': prompt,
+        }])
+        return response.message.content
+    except Exception as e:
+        return f"Error fetching response from AI: {str(e)}"
+
+# Function to display rewards when unlocked
+def check_rewards(points: int):
+    """Check if the user has unlocked rewards and display them."""
+    if points >= 100:
+        print("\n🎉 Congratulations! You've unlocked PREMIUM features! 🎉")
+        print("You now have access to:")
+        print("- Extra SkillsFuture credits")
+        print("- Exclusive mentorship sessions with experienced professionals!")
+
+# Function to interpret and summarize sections
+def interpret_section(section_name: str, details: str) -> str:
+    """Use AI to interpret and summarize a specific section."""
+    if not details.strip():
+        return f"No {section_name} provided."
+    
+    prompt = (
+        f"Interpret and summarize the following {section_name} details into a professional, concise paragraph suitable for a resume:\n\n"
+        f"Details: {details}\n\n"
+        "Make the summary polished, professional, and appropriate for a resume."
+    )
+    response = get_chat_response(prompt)
+    return response.strip() if response.strip() else f"Could not generate a summary for {section_name}."
+
+# Function to extract top courses
+def extract_top_courses(recommendations: str):
+    """Extract top 3 courses from the AI recommendations."""
+    courses = recommendations.split('\n')
+    top_courses = [course.strip() for course in courses if course.strip()][:3]
+    return top_courses
+
+# Resume builder function
+def build_resume():
+    # PDPA confirmation prompt
+    pdpa_acknowledgment = input(
+        "According to PDPA, please ensure that all information provided is accurate and authentic, as any false statements may be subject to legal consequences. Do you confirm? (yes/no): ").strip().lower()
+    
+    if pdpa_acknowledgment != "yes":
+        print("You must confirm the accuracy and authenticity of your information to proceed.")
+        return
+    
+    print("\n--- Resume Builder ---")
+    # Collect user details
+    name = input("Enter your full name: ").strip()
+    alma_mater = input("Enter your alma mater: ").strip()
+    education = input("Enter your highest education level (e.g., High School, Bachelor's, Master's): ").strip()
+    skills = input("Enter your skills (comma-separated): ").strip().split(",")
+    skills = [skill.strip() for skill in skills if skill.strip()]
+    desired_industry = input("Enter your desired job industry (e.g., Data Science, Marketing, Finance): ").strip()
+
+    # Optional sections
+    work_experience = input("Enter your work experience: ").strip()
+    achievements = input("Enter your achievements: ").strip()
+
+    # Generate AI-powered summaries
+    print("\nProcessing AI-powered summaries...\n")
+    work_experience_summary = interpret_section("Work Experience", work_experience)
+    achievements_summary = interpret_section("Achievements", achievements)
+
+    # AI recommendations for courses and skills
+    ai_prompt = f"I am creating a resume for someone with the following details:\n\n"
+    ai_prompt += f"Name: {name}\nAlma Mater: {alma_mater}\nEducation: {education}\n"
+    ai_prompt += f"Skills: {', '.join(skills) if skills else 'N/A'}\n"
+    ai_prompt += f"Desired Industry: {desired_industry}\n"
+    ai_prompt += "Can you recommend some courses or skills that might enhance their profile for their desired industry?"
+    ai_recommendations = get_chat_response(ai_prompt)
+
+    # Extract top 3 courses
+    top_courses = extract_top_courses(ai_recommendations)
+
+    # Generate resume content
+    resume = f"""
+    ----------------------------
+    RESUME
+    ----------------------------
+    Name: {name}
+    Alma Mater: {alma_mater}
+    Education: {education}
+    Skills: {', '.join(skills) if skills else "N/A"}
+    Desired Industry: {desired_industry}
+
+    Work Experience:
+    {work_experience_summary}
+
+    Achievements:
+    {achievements_summary}
+
+    AI-Recommended Enhancements:
+    {ai_recommendations.strip()}
+    ----------------------------
+    """
+    print("\nGenerated Resume:")
+    print(resume)
+
+    # Save option
+    save_option = input("Do you want to save this resume to a file? (yes/no): ").strip().lower()
+    if save_option == "yes":
+        filename = input("Enter the filename (without extension): ").strip()
+        with open(f"{filename}.txt", "w") as file:
+            file.write(resume)
+        print(f"Resume saved as '{filename}.txt' in the current directory.")
+
+    return top_courses
+
+# SkillsFuture dashboard
+def skills_future_dashboard():
+    points = 0
+    top_courses = build_resume()  # Build resume and get top courses
+    
+    while True:
+        print("\n--- SkillsFuture Dashboard ---")
+        print("1. View Resume")
+        print("2. Complete a Course")
+        print("3. Complete a Quiz")
+        print("4. View Recommended Courses")
+        print("5. Exit")
+        choice = input("Choose an option: ").strip()
+
+        if choice == "1":
+            # Display resume (reuse previous function)
+            build_resume()
+        elif choice == "2":
+            # Simulate completing a course
+            completed_course = input("Enter the name of the course you completed: ").strip()
+            hours = int(input("Enter the number of hours you spent on the course: ").strip())
+            points_earned = hours * 10  # Example: 10 points per hour
+            points += points_earned
+            print(f"🎉 You earned {points_earned} points for completing '{completed_course}'!")
+            print(f"Total Points: {points}")
+
+            # Check rewards
+            if points >= 100:
+                check_rewards(points)
+        elif choice == "3":
+            # Simulate completing a quiz
+            completed_quiz = input("Enter the name of the quiz you completed: ").strip()
+            questions_answered = int(input("Enter the number of questions you answered correctly: ").strip())
+            points_earned = questions_answered * 5  # Example: 5 points per correct question
+            points += points_earned
+            print(f"🎉 You earned {points_earned} points for completing '{completed_quiz}'!")
+            print(f"Total Points: {points}")
+
+            # Check rewards
+            if points >= 100:
+                check_rewards(points)
+        elif choice == "4":
+            # Display top 3 courses
+            print(" ")
+            print("Recommended Courses:")
+            for i, course in enumerate(top_courses, 1):
+                print(f"{i}. {course}")
+        elif choice == "5":
+            print("Thank you for using SkillsFuture Points Tracker! Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+# Chatbot function
+def chat_with_bot():
+    print("\n--- AI Chatbot ---")
+    print("Ask the AI Chatbot a question (type 'exit' to quit):")
+    while True:
+        message = input("> ").strip()
+        if message.lower() == "exit":
+            print("Goodbye!")
+            break
+        elif message.strip():
+            response = get_chat_response(message)
+            print(f"AI: {response}")
+        else:
+            print("Please enter a valid question.")
+
+# Main program
+def main():
+    while True:
+        print("\n--- AI Skills Tracker & Chatbot ---")
+        print("1. SkillsFuture Dashboard")
+        print("2. Chat with AI Chatbot")
+        print("3. Exit")
+        choice = input("Enter your choice: ").strip()
+
+        if choice == "1":
+            skills_future_dashboard()
+        elif choice == "2":
+            chat_with_bot()
+        elif choice == "3":
+            print("Thank you for using the program. Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
